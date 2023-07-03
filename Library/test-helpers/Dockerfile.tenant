@@ -1,0 +1,2 @@
+FROM quay.io/centos/centos:stream9
+RUN dnf install -y keylime-tenant util-linux-core which && dnf clean all

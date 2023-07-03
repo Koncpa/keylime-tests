@@ -7,6 +7,7 @@ environment+:
   DOCKERFILE_AGENT: Dockerfile.upstream.c9s
   DOCKERFILE_VERIFIER: Dockerfile.upstream.c9s
   DOCKERFILE_REGISTRAR: Dockerfile.upstream.c9s
+  DOCKERFILE_TENANT: Dockerfile.upstream.c9s
 
 discover:
   how: fmf

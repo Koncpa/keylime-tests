@@ -612,6 +612,38 @@ limeStopAgent() {
 true <<'=cut'
 =pod
 
+=head2 limeKeylimeTenant
+
+Run the keylime tenant on localhost or in container with specified tenant commands.
+
+    limeKeylimeTenant TENANT_CMD
+
+=over
+
+=item
+
+    TENANT_CMD - Set of commands which tenant run.
+
+=back
+
+Returns 0 when the stop was successful, non-zero otherwise.
+
+=cut
+
+limeKeylimeTenant() {
+
+    local TENANT_CMD=$@
+
+    if [ -n "$limeconKeylimeTenantCmd" ]; then
+        limeconRunTenant "$limeconKeylimeTenantCmd" "$TENANT_CMD" "$limeconTenantVolume"
+    else
+        keylime_tenant $TENANT_CMD
+    fi
+}
+
+true <<'=cut'
+=pod
+
 =head2 limeStartIMAEmulator
 
 Start the keylime IMA Emulator.
@@ -1166,20 +1198,19 @@ limeWaitForAgentStatus() {
     [ -n "$3" ] && TIMEOUT=$3
 
     for I in `seq $TIMEOUT`; do
-        keylime_tenant -c status -u $UUID &> $OUTPUT
+        limeKeylimeTenant -c status -u $UUID &> $OUTPUT
 	AGTSTATE=$(cat "$OUTPUT" | grep "^{" | tail -1 | jq -r ".[].operational_state")
 	if echo "$AGTSTATE" | grep -E -q "$STATUS"; then
             cat $OUTPUT
-	    rm $OUTPUT
-	    return 0
-	fi
+            rm $OUTPUT
+            return 0
+        fi
         sleep 1
     done
     cat $OUTPUT
     rm $OUTPUT
     return 1
 }
-
 
 true <<'=cut'
 =pod
@@ -1215,7 +1246,7 @@ limeWaitForAgentRegistration() {
     [ -n "$2" ] && TIMEOUT=$2
 
     for I in `seq $TIMEOUT`; do
-        keylime_tenant -c regstatus -u $UUID &> $OUTPUT
+        limeKeylimeTenant -c regstatus -u $UUID &> $OUTPUT
         REGSTATE=$(cat $OUTPUT | grep "^{" | jq -r ".[].operational_state")
 	if [ $REGSTATE == "Registered" ]; then
             cat $OUTPUT
@@ -2213,6 +2244,50 @@ limeconRunSystemd() {
     local EXTRA_PODMAN_ARGS=$5
 
     limeconRun $NAME $TAG $IP $NETWORK "/sbin/init" "${EXTRA_PODMAN_ARGS}"
+
+}
+
+true <<'=cut'
+=pod
+
+=head2 limeconRunTenant
+
+Tenant container run via podman with specified parameters.
+
+    limeconRunTenant PODMAN_CMD TENANT_CMD MOUNT_DIR
+
+=item PODMAC_CMD
+
+Setup of starting container.
+
+=item TENANT_CMD
+
+Keylime tenant command in container
+
+=item MOUNT_DIR
+
+Path of mount dir.
+
+=back
+
+Returns 0.
+
+=cut
+
+limeconRunTenant() {
+
+    local PODMAN_CMD=$1
+    local TENANT_CMD=$2
+    local MOUNT_DIR=$3
+    local MOUNT_TENANT="--volume=/etc/keylime/:/etc/keylime/"
+
+    if [ -d cv_ca ]; then
+        MOUNT_TENANT="--volume $PWD/cv_ca:/var/lib/keylime/cv_ca/:z $MOUNT_TENANT"
+    fi
+    
+    podman run $MOUNT_DIR $MOUNT_TENANT $PODMAN_CMD keylime_tenant $TENANT_CMD
+    sleep 3
+    limeconStop "tenant_container"
 
 }
 
