@@ -325,6 +325,7 @@ _EOF"
 fi
 
     rlPhaseStartTest "keylime attestation test: Add Agent"
+        rlRun "cat policy.json"
         # register AGENT and confirm it has passed validation
         AGENT_ID="d432fbb3-d2f1-4a97-9ef7-75bd81c00000"
         rlRun "cat > script.expect <<_EOF
