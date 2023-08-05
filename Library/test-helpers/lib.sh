@@ -1272,7 +1272,7 @@ Returns 0 when the initialization was successfull, non-zero otherwise.
 limeInstallIMAConfig() {
 
     local FILE
-    local DEFAULT=ima-policy-simple
+    local DEFAULT=ima-policy-signing
 
     #when no policy has been passed as an argument
     if [ -z "$1" ]; then
